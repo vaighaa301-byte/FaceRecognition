@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFace AI - Attendance System</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Background Glow Orbs -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="dashboard-container">
+        <!-- Top Navigation Bar -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="logo-box">
+                    <i class="fa-solid fa-face-viewfinder"></i>
+                </div>
+                <div>
+                    <h1>SmartFace <span class="gradient-text">AI</span></h1>
+                    <p class="subtitle">Real-Time Facial Recognition Attendance Portal</p>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <div class="status-chip" id="modelStatusChip">
+                    <span class="status-dot pulsating"></span>
+                    <span id="modelStatusText">Initializing AI...</span>
+                </div>
+                <div class="time-chip">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="currentTime">--:--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="grid-layout">
+            <!-- Left Column: Video Feed & Live Status -->
+            <section class="left-section">
+                <!-- Video Stream Card -->
+                <div class="glass-card video-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-camera"></i>
+                            <h2>Live Recognition Scanner</h2>
+                        </div>
+                        <div class="stream-badge live">
+                            <span class="blink-dot"></span> LIVE
+                        </div>
+                    </div>
+
+                    <div class="video-wrapper">
+                        <!-- Scanning Grid Overlay -->
+                        <div class="scan-overlay">
+                            <div class="corner corner-tl"></div>
+                            <div class="corner corner-tr"></div>
+                            <div class="corner corner-bl"></div>
+                            <div class="corner corner-br"></div>
+                            <div class="laser-scanner"></div>
+                        </div>
+
+                        <!-- Video Stream -->
+                        <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Live Camera Feed">
+                        
+                        <div class="feed-placeholder" id="feedLoading">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            <p>Connecting to camera feed...</p>
+                        </div>
+                    </div>
+
+                    <div class="video-footer">
+                        <div class="target-detected" id="detectedBanner">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span id="detectionText">Waiting for face detection...</span>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" id="btnRefreshFeed" title="Reload Video Feed">
+                            <i class="fa-solid fa-arrow-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Model Information Card -->
+                <div class="glass-card info-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-id-card-clip"></i>
+                            <h3>Registered Identities</h3>
+                        </div>
+                        <span class="badge" id="registeredCountBadge">0 registered</span>
+                    </div>
+                    <div class="tags-container" id="registeredTags">
+                        <span class="placeholder-tag">Loading identities...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Stats & Attendance Records -->
+            <section class="right-section">
+                <!-- Statistics Cards -->
+                <div class="stats-row">
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon icon-blue">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="stat-label">Total Enrolled</span>
+                            <span class="stat-value" id="statTotalEnrolled">0</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon icon-green">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="stat-label">Present Today</span>
+                            <span class="stat-value text-green" id="statPresentToday">0</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon icon-purple">
+                            <i class="fa-solid fa-user-xmark"></i>
+                        </div>
+                        <div class="stat-data">
+                            <span class="stat-label">Pending / Absent</span>
+                            <span class="stat-value text-purple" id="statAbsent">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table Card -->
+                <div class="glass-card table-card">
+                    <div class="card-header table-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-clipboard-user"></i>
+                            <h2>Today's Attendance Log</h2>
+                        </div>
+                        <div class="table-actions">
+                            <input type="date" id="dateSelector" class="custom-input">
+                            <a id="btnDownload" href="/api/download" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter Bar -->
+                    <div class="search-bar-wrap">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="searchFilter" placeholder="Filter by name..." class="search-input">
+                    </div>
+
+                    <!-- Attendance Table -->
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Candidate</th>
+                                    <th>Date</th>
+                                    <th>Check-in Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTbody">
+                                <tr>
+                                    <td colspan="5" class="empty-state">
+                                        <i class="fa-solid fa-inbox"></i>
+                                        <p>No attendance records logged yet today.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
